@@ -1,7 +1,9 @@
 package deepcopy
 
 import (
+	"bytes"
 	"database/sql"
+	"encoding/gob"
 	"reflect"
 	"testing"
 
@@ -40,6 +42,14 @@ func jinzhuCopier() *User {
 	return clone
 }
 
+func gobCopier(a, b interface{}) {
+	buff := new(bytes.Buffer)
+	enc := gob.NewEncoder(buff)
+	dec := gob.NewDecoder(buff)
+	enc.Encode(a)
+	dec.Decode(b)
+}
+
 func TestUluleDeepCopier(t *testing.T) {
 	clone := &User{}
 	err := deepcopier.Copy(user).To(clone)
@@ -62,6 +72,14 @@ func TestJinzhuCopier(t *testing.T) {
 	}
 }
 
+func TestGobCopier(t *testing.T) {
+	clone := &User{}
+	gobCopier(user, clone)
+	if !reflect.DeepEqual(user, clone) {
+		t.Fail()
+	}
+}
+
 func BenchmarkUluleDeepCopier(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		clone = ululeDeepCopier()
@@ -71,5 +89,12 @@ func BenchmarkUluleDeepCopier(b *testing.B) {
 func BenchmarkJinzhuCopier(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		clone = jinzhuCopier()
+	}
+}
+
+func BenchmarkGobCopier(b *testing.B) {
+	clone := &User{}
+	for i := 0; i < b.N; i++ {
+		gobCopier(user, clone)
 	}
 }
